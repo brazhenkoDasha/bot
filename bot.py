@@ -32,13 +32,12 @@ async def handle_question(update: Update, context: CallbackContext):
     user_name = update.message.from_user.username or "Неизвестный пользователь"
     
     try:
-        # Отправляем вопрос в группу организаторов
+        #send questuin into group
         sent_message = await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=f"Вопрос от @{user_name}:\n\n{question_text}"
         )
         
-        # Сохраняем связь между сообщением и пользователем
         message_to_user_map[sent_message.message_id] = user_id
         question_messages[sent_message.message_id] = True  # Помечаем, что это вопрос
         
@@ -49,7 +48,6 @@ async def handle_question(update: Update, context: CallbackContext):
         await update.message.reply_text("Произошла ошибка при отправке вопроса. Попробуйте позже.")
         awaiting_question.remove(user_id)
 
-# Измените функцию reply_to_user следующим образом:
 async def reply_to_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     if user_id not in allowed_users:
@@ -73,7 +71,7 @@ async def reply_to_user(update: Update, context: CallbackContext):
         return
 
     try:
-        # Определяем тип ответа (на вопрос или на файл)
+        # Determine type 
         if original_message_id in question_messages:
             message_text = "Ответ на ваш вопрос: "
         else:
@@ -94,7 +92,7 @@ async def handle_message(update: Update, context: CallbackContext):
         await update.message.reply_text("Если вы хотите задать вопрос организаторам – воспользуйтесь /help, если хотите ещё раз отправить работу – прикрепите файл. В другом случае мы не получим ваш вопрос/ответ.")
         return
 
-    # Обработка ссылки для большого файла
+    #for big file
     if user_id in awaiting_large_file_link and (message_text.startswith("http://") or message_text.startswith("https://")):
         fio = user_fio_map[user_id]
         try:
@@ -112,7 +110,7 @@ async def handle_message(update: Update, context: CallbackContext):
             await update.message.reply_text("Произошла ошибка при отправке ссылки. Попробуйте снова позже")
             return
 
-    # Обработка ФИО
+    # surname, name
     if user_id not in user_fio_map:
         user_fio_map[user_id] = message_text
         try:
@@ -121,7 +119,6 @@ async def handle_message(update: Update, context: CallbackContext):
             logger.error(f"Ошибка при отправке ФИО администраторам: {e}")
             await update.message.reply_text("Произошла ошибка при сохранении ФИО. Попробуйте снова позже")
     else:
-        # Если пользователь уже ввел ФИО и это не ссылка
         if not (message_text.startswith("http://") or message_text.startswith("https://")):
             await update.message.reply_text("Вы уже ввели свое ФИО. Пожалуйста, отправьте файл с работой или ссылку на файл")
 
@@ -213,7 +210,6 @@ def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("reply", reply_to_user))
     
-    # Используем один обработчик сообщений с приоритетами
     async def message_router(update: Update, context: CallbackContext):
         user_id = update.message.from_user.id
         
